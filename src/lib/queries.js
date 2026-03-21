@@ -1,29 +1,38 @@
 import { supabase } from './supabase'
 
+const q = (fn) => supabase ? fn() : Promise.resolve({ data: [] })
 
 export const fetchTransactions = () =>
-  supabase
-    .from('transactions')
-    .select('*')
-    .order('date', { ascending: false })
-    .limit(100)
+  q(() => supabase.from('transactions').select('*').order('date', { ascending: false }).limit(200))
 
 export const fetchBudgetVsActual = () =>
-  supabase.from('v_budget_vs_actual').select('*')
+  q(() => supabase.from('v_budget_vs_actual').select('*'))
 
 export const fetchProfile = () =>
-  supabase.from('profile').select('*').limit(1)
+  q(() => supabase.from('profile').select('*').limit(1))
 
 export const fetchBotLogs = (limit = 100) =>
-  supabase
-    .from('bot_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  q(() => supabase.from('bot_logs').select('*').order('created_at', { ascending: false }).limit(limit))
 
 export const fetchSavingsGoals = () =>
-  supabase.from('savings_goals').select('*')
+  q(() => supabase.from('savings_goals').select('*').order('created_at', { ascending: false }))
 
 export const fetchWishlist = () =>
-  supabase.from('wishlist').select('*')
+  q(() => supabase.from('wishlist').select('*').order('priority', { ascending: false }))
 
+export const fetchRecurringTransactions = () =>
+  q(() => supabase.from('recurring_transactions').select('*').eq('is_active', true).order('day_of_month', { ascending: true }))
+
+export const fetchSystemHealth = () =>
+  q(() => supabase.from('system_health').select('*').order('created_at', { ascending: false }).limit(1))
+
+export const fetchMonthlySummary = () =>
+  q(() => supabase.from('monthly_summary').select('*').order('year', { ascending: false }).order('month', { ascending: false }).limit(6))
+
+export const fetchBudgets = () =>
+  q(() => {
+    const now = new Date()
+    return supabase.from('budgets').select('*')
+      .eq('month', now.getMonth() + 1)
+      .eq('year', now.getFullYear())
+  })
