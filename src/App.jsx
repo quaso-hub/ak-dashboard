@@ -82,7 +82,6 @@ export default function App() {
   const [newRowIds, setNewRowIds] = useState(new Set())
   const [filters, setFilters] = useState({ search: '', category: '', type: '', month: '', minAmount: '' })
   const [logStatusFilter, setLogStatusFilter] = useState('all')
-  const [txCategoryFilter, setTxCategoryFilter] = useState('')
   const [lastSynced, setLastSynced] = useState(null)
 
   // ─── Data state ─────────────────────────────────────────────────────────────
@@ -304,10 +303,11 @@ export default function App() {
   const totalActualAmount = budgetArr.reduce((s, b) => s + Number(b.actual_amount || 0), 0)
   const totalBudgetPct = totalBudgetAmount > 0 ? Math.round((totalActualAmount / totalBudgetAmount) * 100) : 0
 
-  // ─── All unique categories from transactions ──────────────────────────────────
+  // ─── All unique categories from transactions (with counts) ──────────────────
   const allCategories = useMemo(() => {
-    const cats = new Set(txArray.map(tx => tx.category).filter(Boolean))
-    return Array.from(cats).sort()
+    const map = {}
+    txArray.forEach(tx => { if (tx.category) map[tx.category] = (map[tx.category] || 0) + 1 })
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }))
   }, [txArray])
 
   // ─── Risk score calculation ───────────────────────────────────────────────────
@@ -379,7 +379,6 @@ export default function App() {
   // ─── Filtered transactions by category chip ────────────────────────────────────
   const filteredTxForPage = txArray
     .filter(tx => {
-      if (txCategoryFilter && tx.category !== txCategoryFilter) return false
       if (filters.search && !tx.description?.toLowerCase().includes(filters.search.toLowerCase())) return false
       if (filters.category && tx.category !== filters.category) return false
       if (filters.type && tx.type !== filters.type) return false
@@ -673,40 +672,13 @@ export default function App() {
         {/* ══════════ TRANSAKSI ══════════ */}
         {page === 'transactions' && (
           <>
-            <FilterBar filters={filters} onFilterChange={setFilters}
-              onReset={() => { setFilters({ search: '', category: '', type: '', month: '', minAmount: '' }); setTxCategoryFilter('') }} />
-
-            {/* Category filter chips */}
-            {allCategories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={() => setTxCategoryFilter('')}
-                  className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 font-medium ${
-                    txCategoryFilter === ''
-                      ? 'bg-brand-500/20 text-brand-300 border-brand-500/40'
-                      : 'bg-surface-200/50 text-muted-foreground border-white/10 hover:border-white/20 hover:text-foreground'
-                  }`}>
-                  Semua
-                  <span className="ml-1.5 text-xs opacity-70">({txArray.length})</span>
-                </button>
-                {allCategories.map(cat => {
-                  const count = txArray.filter(tx => tx.category === cat).length
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setTxCategoryFilter(txCategoryFilter === cat ? '' : cat)}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 font-medium ${
-                        txCategoryFilter === cat
-                          ? 'bg-brand-500/20 text-brand-300 border-brand-500/40'
-                          : 'bg-surface-200/50 text-muted-foreground border-white/10 hover:border-white/20 hover:text-foreground'
-                      }`}>
-                      {cat}
-                      <span className="ml-1.5 text-xs opacity-70">({count})</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+            <FilterBar
+              filters={filters}
+              onFilterChange={setFilters}
+              onReset={() => setFilters({ search: '', category: '', type: '', month: '', minAmount: '' })}
+              categories={allCategories}
+              txTotal={txArray.length}
+            />
 
             <Card>
               {txArray.length > 0 ? (
