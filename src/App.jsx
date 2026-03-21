@@ -6,6 +6,7 @@ import { fetchTransactions, fetchBudgetVsActual, fetchProfile, fetchBotLogs } fr
 import ParticlesBackground from './components/effects/ParticlesBackground'
 import FilterBar from './components/ui/FilterBar'
 import ScoreRing from './components/ui/ScoreRing'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import {
   TrendingDown,
   TrendingUp,
@@ -347,6 +348,7 @@ export default function App() {
           </Card>
         )}
       </div>
+      <SpeedInsights />
     </div>
   )
 }
