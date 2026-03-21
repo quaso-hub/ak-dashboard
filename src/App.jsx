@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { StatCard, Card, Table } from './components/ui/Cards'
-import { SpendingChart, BudgetChart, CategoryPie } from './components/charts/Charts'
+import { SpendingChart, BudgetChart, CategoryPie, CashflowChart } from './components/charts/Charts'
 import { supabase, fmt, fmtDate, fmtTime } from './lib/supabase'
 import { fetchTransactions, fetchBudgetVsActual, fetchProfile, fetchBotLogs } from './lib/queries'
 
@@ -78,6 +78,26 @@ export default function App() {
     return Object.entries(grouped).map(([name, value]) => ({ name, value }))
   }, [thisMonth])
 
+  const cashflowData = React.useMemo(() => {
+    const grouped = {}
+    txArray.forEach(tx => {
+      if (!tx.date) return
+      const month = tx.date.substring(0, 7) // YYYY-MM
+      if (!grouped[month]) {
+        grouped[month] = { income: 0, spent: 0 }
+      }
+      if (tx.type === 'income') {
+        grouped[month].income += tx.amount
+      } else if (tx.type === 'expense') {
+        grouped[month].spent += tx.amount
+      }
+    })
+    return Object.entries(grouped)
+      .map(([date, values]) => ({ date, ...values }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-12) // last 12 months
+  }, [txArray])
+
   return (
     <div className="min-h-screen bg-surface-DEFAULT">
       {/* TOPBAR */}
@@ -100,6 +120,7 @@ export default function App() {
           { id: 'overview', label: '📊 Overview' },
           { id: 'transactions', label: '💳 Transaksi' },
           { id: 'budget', label: '🎯 Budget' },
+          { id: 'cashflow', label: '📈 Cashflow' },
           { id: 'logs', label: '📋 Logs' },
         ].map(tab => (
           <button
@@ -122,49 +143,63 @@ export default function App() {
           <div className="space-y-6">
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Pengeluaran" value={fmt(totalSpent)} subtext="bulan ini" icon="💸" accentColor="red" />
-              <StatCard label="Pemasukan" value={fmt(totalIncome)} subtext="dari profil" icon="💰" accentColor="green" />
-              <StatCard label="Sisa" value={fmt(remaining)} subtext={remaining > 0 ? 'tersisa' : 'minus'} icon="📊" accentColor={remaining > 0 ? 'green' : 'red'} />
-              <StatCard label="Transaksi" value={thisMonth.length} subtext="dicatat bulan ini" icon="📋" accentColor="cyan" />
+              <div className="animate-slideUp" style={{ animationDelay: '0.0s' }}>
+                <StatCard label="Pengeluaran" value={fmt(totalSpent)} subtext="bulan ini" icon="💸" accentColor="red" />
+              </div>
+              <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
+                <StatCard label="Pemasukan" value={fmt(totalIncome)} subtext="dari profil" icon="💰" accentColor="green" />
+              </div>
+              <div className="animate-slideUp" style={{ animationDelay: '0.2s' }}>
+                <StatCard label="Sisa" value={fmt(remaining)} subtext={remaining > 0 ? 'tersisa' : 'minus'} icon="📊" accentColor={remaining > 0 ? 'green' : 'red'} />
+              </div>
+              <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
+                <StatCard label="Transaksi" value={thisMonth.length} subtext="dicatat bulan ini" icon="📋" accentColor="cyan" />
+              </div>
             </div>
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="Pengeluaran Harian">
-                {spendingByDay.length > 0 && <SpendingChart data={spendingByDay} />}
-              </Card>
-              <Card title="Pengeluaran per Kategori">
-                {categoryData.length > 0 && <CategoryPie data={categoryData} />}
-              </Card>
+              <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                <Card title="Pengeluaran Harian">
+                  {spendingByDay.length > 0 && <SpendingChart data={spendingByDay} />}
+                </Card>
+              </div>
+              <div className="animate-slideUp" style={{ animationDelay: '0.5s' }}>
+                <Card title="Pengeluaran per Kategori">
+                  {categoryData.length > 0 && <CategoryPie data={categoryData} />}
+                </Card>
+              </div>
             </div>
 
             {/* Budget Status */}
-            <Card title="Budget Status">
-              {budgetLoading ? (
-                <div className="text-center text-slate-500 py-8">Memuat...</div>
-              ) : budgetData && budgetData.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {budgetData.map((b, idx) => {
-                    const pct = Math.round(parseFloat(b.percentage_used || 0))
-                    const colorClass = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-500' : pct >= 50 ? 'bg-amber-500' : 'bg-green-500'
-                    return (
-                      <div key={idx} className="glass rounded-xl p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-slate-200">{b.category}</span>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${colorClass} bg-opacity-20`}>{pct}%</span>
+            <div className="animate-slideUp" style={{ animationDelay: '0.6s' }}>
+              <Card title="Budget Status">
+                {budgetLoading ? (
+                  <div className="text-center text-slate-500 py-8">Memuat...</div>
+                ) : budgetData && budgetData.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {budgetData.map((b, idx) => {
+                      const pct = Math.round(parseFloat(b.percentage_used || 0))
+                      const colorClass = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-500' : pct >= 50 ? 'bg-amber-500' : 'bg-green-500'
+                      return (
+                        <div key={idx} className="glass rounded-xl p-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium text-slate-200">{b.category}</span>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${colorClass} bg-opacity-20`}>{pct}%</span>
+                          </div>
+                          <div className="w-full bg-slate-700 bg-opacity-30 rounded-full h-2">
+                            <div className={`h-2 rounded-full ${colorClass} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                          </div>
+                          <div className="text-xs text-slate-400 mt-2">{fmt(b.spent)} / {fmt(b.budget)}</div>
                         </div>
-                        <div className="w-full bg-slate-700 bg-opacity-30 rounded-full h-2">
-                          <div className={`h-2 rounded-full ${colorClass} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                        </div>
-                        <div className="text-xs text-slate-400 mt-2">{fmt(b.spent)} / {fmt(b.budget)}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 py-8">Belum ada budget</div>
-              )}
-            </Card>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 py-8">Belum ada budget</div>
+                )}
+              </Card>
+            </div>
           </div>
         )}
 
@@ -172,17 +207,19 @@ export default function App() {
           <Card>
             {txLoading ? (
               <div className="text-center text-slate-500 py-8">Memuat...</div>
-            ) : (
+            ) : txArray.length > 0 ? (
               <Table
                 columns={['date', 'description', 'category', 'type', 'amount']}
-                data={txData?.map(tx => ({
+                data={txArray.map(tx => ({
                   date: fmtDate(tx.date),
                   description: tx.description,
                   category: tx.category,
                   type: tx.type,
                   amount: fmt(tx.amount),
-                })) || []}
+                }))}
               />
+            ) : (
+              <div className="text-center text-slate-500 py-8">Tidak ada transaksi</div>
             )}
           </Card>
         )}
@@ -195,6 +232,18 @@ export default function App() {
               <BudgetChart data={budgetData} />
             ) : (
               <div className="text-center text-slate-500 py-8">Belum ada data</div>
+            )}
+          </Card>
+        )}
+
+        {page === 'cashflow' && (
+          <Card title="Cashflow (Pemasukan vs Pengeluaran per Bulan)">
+            {txLoading ? (
+              <div className="text-center text-slate-500 py-8">Memuat...</div>
+            ) : cashflowData.length > 0 ? (
+              <CashflowChart data={cashflowData} />
+            ) : (
+              <div className="text-center text-slate-500 py-8">Belum ada data transaksi</div>
             )}
           </Card>
         )}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts'
 
 export const SpendingChart = ({ data }) => (
   <ResponsiveContainer width="100%" height={250}>
@@ -40,3 +40,16 @@ export const CategoryPie = ({ data }) => (
   </ResponsiveContainer>
 )
 
+export const CashflowChart = ({ data }) => (
+  <ResponsiveContainer width="100%" height={300}>
+    <AreaChart data={data}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+      <XAxis dataKey="date" stroke="#6b7280" />
+      <YAxis stroke="#6b7280" />
+      <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: '8px' }} />
+      <Area type="monotone" dataKey="spent" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} name="Pengeluaran" />
+      <Area type="monotone" dataKey="income" stroke="#22c55e" fill="#22c55e" fillOpacity={0.2} strokeWidth={2} name="Pemasukan" />
+      <Legend />
+    </AreaChart>
+  </ResponsiveContainer>
+)

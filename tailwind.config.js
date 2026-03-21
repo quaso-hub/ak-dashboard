@@ -22,10 +22,10 @@ export default {
         'accent': '#06b6d4',
       },
       fontFamily: {
+        sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
     },
   },
   plugins: [],
 }
-
