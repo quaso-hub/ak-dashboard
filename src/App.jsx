@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { StatCard, Card, Table } from './components/ui/Cards'
 import { SpendingChart, BudgetChart, CategoryPie, CashflowChart } from './components/charts/Charts'
 import { supabase, fmt, fmtDate, fmtTime } from './lib/supabase'
 import { fetchTransactions, fetchBudgetVsActual, fetchProfile, fetchBotLogs } from './lib/queries'
 import ParticlesBackground from './components/effects/ParticlesBackground'
+import FilterBar from './components/ui/FilterBar'
+import ScoreRing from './components/ui/ScoreRing'
 import {
   TrendingDown,
   TrendingUp,
@@ -53,6 +55,13 @@ const useSupabaseQuery = (queryFn, intervalMs = 30000) => {
 export default function App() {
   const [page, setPage] = useState('overview')
   const [connStatus, setConnStatus] = useState('connecting')
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    type: '',
+    month: '',
+    minAmount: '',
+  })
 
   const { data: txData, loading: txLoading, error: txError } = useSupabaseQuery(fetchTransactions)
   const { data: budgetData, loading: budgetLoading, error: budgetError } = useSupabaseQuery(fetchBudgetVsActual)
@@ -131,7 +140,7 @@ export default function App() {
     <div className="min-h-screen bg-surface-DEFAULT relative overflow-hidden">
       <ParticlesBackground />
       {/* TOPBAR */}
-      <div className="glass border-b sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+      <div className="glass border-b sticky top-0 z-50 px-8 py-5 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center">
             <Wallet className="w-5 h-5 text-white" />
@@ -151,7 +160,7 @@ export default function App() {
       </div>
 
       {/* NAV */}
-      <div className="glass border-b px-6 flex gap-1 overflow-x-auto sticky top-12 z-40">
+      <div className="glass border-b px-8 py-3 flex gap-1 overflow-x-auto sticky top-12 z-40">
         {navTabs.map(tab => {
           const Icon = tab.icon
           return (
@@ -172,11 +181,11 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="p-6 max-w-7xl mx-auto relative z-10">
+      <div className="p-8 max-w-7xl mx-auto relative z-10">
         {page === 'overview' && (
           <div className="space-y-6">
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="animate-slideUp" style={{ animationDelay: '0.0s' }}>
                 <StatCard label="Pengeluaran" value={fmt(totalSpent)} subtext="bulan ini" icon="trendingDown" accentColor="red" />
               </div>
@@ -189,10 +198,15 @@ export default function App() {
               <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
                 <StatCard label="Transaksi" value={thisMonth.length} subtext="dicatat bulan ini" icon="fileText" accentColor="cyan" />
               </div>
+              <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                <div className="stat-card flex flex-col items-center justify-center p-6">
+                  <ScoreRing score={75} size={80} strokeWidth={6} label="Risk Score" />
+                </div>
+              </div>
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
                 <Card title="Pengeluaran Harian">
                   {spendingByDay.length > 0 && <SpendingChart data={spendingByDay} />}
@@ -240,26 +254,48 @@ export default function App() {
         )}
 
         {page === 'transactions' && (
-          <Card>
-            {txLoading ? (
-              <div className="text-center text-muted-foreground py-8">Memuat...</div>
-            ) : txError ? (
-              <div className="text-center text-red-400 py-8">Error: {txError}</div>
-            ) : txArray.length > 0 ? (
-              <Table
-                columns={['date', 'description', 'category', 'type', 'amount']}
-                data={txArray.map(tx => ({
-                  date: fmtDate(tx.date),
-                  description: tx.description,
-                  category: tx.category,
-                  type: tx.type,
-                  amount: fmt(tx.amount),
-                }))}
-              />
-            ) : (
-              <div className="text-center text-muted-foreground py-8">Tidak ada transaksi</div>
-            )}
-          </Card>
+          <>
+            <FilterBar
+              filters={filters}
+              onFilterChange={setFilters}
+              onReset={() => setFilters({
+                search: '',
+                category: '',
+                type: '',
+                month: '',
+                minAmount: '',
+              })}
+            />
+            <Card>
+              {txLoading ? (
+                <div className="text-center text-muted-foreground py-8">Memuat...</div>
+              ) : txError ? (
+                <div className="text-center text-red-400 py-8">Error: {txError}</div>
+              ) : txArray.length > 0 ? (
+                <Table
+                  columns={['date', 'description', 'category', 'type', 'amount']}
+                  data={txArray
+                    .filter(tx => {
+                      if (filters.search && !tx.description?.toLowerCase().includes(filters.search.toLowerCase())) return false
+                      if (filters.category && tx.category !== filters.category) return false
+                      if (filters.type && tx.type !== filters.type) return false
+                      if (filters.month && !tx.date?.startsWith(filters.month)) return false
+                      if (filters.minAmount && tx.amount < Number(filters.minAmount)) return false
+                      return true
+                    })
+                    .map(tx => ({
+                      date: fmtDate(tx.date),
+                      description: tx.description,
+                      category: tx.category,
+                      type: tx.type,
+                      amount: fmt(tx.amount),
+                    }))}
+                />
+              ) : (
+                <div className="text-center text-muted-foreground py-8">Tidak ada transaksi</div>
+              )}
+            </Card>
+          </>
         )}
 
         {page === 'budget' && (
