@@ -53,9 +53,10 @@ export default function App() {
   }, [])
 
   const today = new Date().toISOString().split('T')[0]
-  const thisMonth = txData?.filter(tx => tx.date?.startsWith(today.substring(0, 7))) || []
-  const totalSpent = thisMonth.reduce((sum, tx) => (tx.type === 'expense' ? sum + tx.amount : sum), 0)
-  const totalIncome = profileData?.[0]?.monthly_income || 0
+  const txArray = Array.isArray(txData) ? txData : []
+  const thisMonth = txArray.filter(tx => tx && tx.date && tx.date.startsWith(today.substring(0, 7))) || []
+  const totalSpent = thisMonth.reduce((sum, tx) => (tx.type === 'expense' ? sum + Number(tx.amount || 0) : sum), 0)
+  const totalIncome = profileData && profileData.length > 0 && profileData[0]?.monthly_income ? profileData[0].monthly_income : 0
   const remaining = totalIncome - totalSpent
 
   const spendingByDay = React.useMemo(() => {
