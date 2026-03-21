@@ -473,6 +473,24 @@ body {
   border: 1px solid rgba(16,185,129,0.3);
 }
 
+/* Budget overdue pulse glow (red) */
+@keyframes budgetOverduePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); border-color: rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.35); border-color: rgba(239, 68, 68, 0.7); }
+}
+.budget-overdue-pulse {
+  animation: budgetOverduePulse 2.2s ease-in-out infinite;
+}
+
+/* Live badge pulse */
+@keyframes liveBadgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+.animate-live-badge {
+  animation: liveBadgePulse 2s ease-in-out infinite;
+}
+
 /* Line clamp utilities */
 .line-clamp-1 {
   overflow: hidden;

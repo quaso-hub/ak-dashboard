@@ -21,8 +21,8 @@ export const BudgetChart = ({ data }) => (
       <YAxis stroke="#6b7280" />
       <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: '8px' }} />
       <Legend />
-      <Bar dataKey="spent" fill="#ef4444" name="Terpakai" />
-      <Bar dataKey="budget" fill="#22c55e" name="Budget" />
+      <Bar dataKey="actual_amount" fill="#ef4444" name="Terpakai" />
+      <Bar dataKey="budget_amount" fill="#22c55e" name="Budget" />
     </BarChart>
   </ResponsiveContainer>
 )
