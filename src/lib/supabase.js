@@ -1,11 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Supabase env vars missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env')
-}
+// Anon key is public by design — safe to hardcode as fallback
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pmlxcgsroaywoxoujvgp.supabase.co'
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtbHhjZ3Nyb2F5d294b3VqdmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDk1NTYsImV4cCI6MjA4OTIyNTU1Nn0.BBNEZal5fDLr7Mgou2rgm25ybdwc8TnwDjROojwtKUI'
 
 export const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey, {
